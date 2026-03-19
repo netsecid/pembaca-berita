@@ -49,7 +49,7 @@ export async function fetchFeed(source: Source): Promise<RawFeedItem[]> {
       const title = item.title || 'Untitled';
       const rawDescription = item.contentSnippet || item.description || '';
       const description = stripHtml(rawDescription).substring(0, 5000);
-      const rawContent = (item as Record<string, string>)['contentEncoded'] || item.content || '';
+      const rawContent = (item as unknown as Record<string, string>)['contentEncoded'] || item.content || '';
       const content = rawContent ? stripHtml(rawContent).substring(0, 10000) : undefined;
 
       let published_at = fetchedAt;
