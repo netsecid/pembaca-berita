@@ -143,7 +143,7 @@ function rowToSource(row: SourceRow): Source {
 
 export function getAllFeeds(filters: FeedFilters = {}): { items: FeedItem[]; total: number } {
   const {
-    windowHours = Number(process.env.FEED_WINDOW_HOURS) || 24,
+    windowHours = Number(process.env.FEED_WINDOW_HOURS) || 168,
     category,
     urgency,
     severity,

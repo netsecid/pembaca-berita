@@ -13,7 +13,9 @@ import refreshRouter from './routes/refresh';
 const app = express();
 const PORT = process.env.PORT || 3001;
 const REFRESH_INTERVAL_MINUTES = Number(process.env.REFRESH_INTERVAL_MINUTES) || 30;
-const FEED_WINDOW_HOURS = Number(process.env.FEED_WINDOW_HOURS) || 24;
+// Storage window: keep items for up to 7 days so any display window (24h–7d) has data.
+// Override with FEED_WINDOW_HOURS env var if you want a shorter retention period.
+const FEED_WINDOW_HOURS = Number(process.env.FEED_WINDOW_HOURS) || 168;
 
 // Middleware
 app.use(cors({ origin: '*' }));

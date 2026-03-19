@@ -20,9 +20,11 @@ const WINDOW_OPTIONS = [
 ];
 
 const REFRESH_OPTIONS = [
-  { label: '15 minutes', value: 15 },
-  { label: '30 minutes', value: 30 },
-  { label: '60 minutes', value: 60 },
+  { label: '15 min', value: 15 },
+  { label: '30 min', value: 30 },
+  { label: '1 hour', value: 60 },
+  { label: '12 hours', value: 720 },
+  { label: '1 day', value: 1440 },
 ];
 
 function Section({ title, description, children }: {
@@ -332,7 +334,7 @@ export default function Settings(): React.ReactElement {
           label="Auto-Refresh Interval"
           hint="How often to automatically fetch new feed items. Requires server restart to take effect."
         >
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {REFRESH_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
