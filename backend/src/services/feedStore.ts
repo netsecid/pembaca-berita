@@ -197,7 +197,7 @@ export function getAllFeeds(filters: FeedFilters = {}): { items: FeedItem[]; tot
 }
 
 export function getFeedStats(windowHours?: number): FeedStats {
-  const resolvedWindow = windowHours ?? Number(process.env.FEED_WINDOW_HOURS) || 24;
+  const resolvedWindow = windowHours ?? (Number(process.env.FEED_WINDOW_HOURS) || 24);
   const cutoffTs = Date.now() - resolvedWindow * 60 * 60 * 1000;
 
   const totalRow = db
@@ -246,7 +246,7 @@ export function getFeedStats(windowHours?: number): FeedStats {
 }
 
 export function getCategories(windowHours?: number): { category: string; count: number }[] {
-  const resolvedWindow = windowHours ?? Number(process.env.FEED_WINDOW_HOURS) || 24;
+  const resolvedWindow = windowHours ?? (Number(process.env.FEED_WINDOW_HOURS) || 24);
   const cutoffTs = Date.now() - resolvedWindow * 60 * 60 * 1000;
 
   const rows = db
@@ -352,7 +352,7 @@ export function addSource(name: string, url: string): Source {
     VALUES (?, ?, ?, 1, ?)
   `).run(id, name, url, added_at);
 
-  const source: Source = { id, name, url, enabled: true, added_at };
+  const source: Source = { id, name, url, enabled: true, added_at, fetch_full_content: false };
 
   // Write to feeds.json
   updateFeedsJson();
