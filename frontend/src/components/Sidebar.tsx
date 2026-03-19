@@ -5,6 +5,8 @@ import { useCategories } from '../hooks/useCategories';
 
 interface SidebarProps {
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function NavItem({
@@ -13,20 +15,24 @@ function NavItem({
   label,
   badge,
   onClick,
+  collapsed,
 }: {
   to: string;
   icon: React.ReactNode;
   label: string;
   badge?: number;
   onClick?: () => void;
+  collapsed?: boolean;
 }): React.ReactElement {
   return (
     <NavLink
       to={to}
       onClick={onClick}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         clsx(
-          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 font-sans',
+          'flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150 font-sans',
+          collapsed ? 'justify-center px-2 py-2' : 'px-3 py-2',
           isActive
             ? 'bg-accent/15 text-accent border border-accent/20'
             : 'text-text-secondary hover:text-text-primary hover:bg-surface/60 border border-transparent'
@@ -34,8 +40,8 @@ function NavItem({
       }
     >
       <span className="w-4 h-4 flex-shrink-0">{icon}</span>
-      <span className="flex-1">{label}</span>
-      {badge !== undefined && badge > 0 && (
+      {!collapsed && <span className="flex-1">{label}</span>}
+      {!collapsed && badge !== undefined && badge > 0 && (
         <span className="bg-accent/20 text-accent text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
           {badge > 999 ? '999+' : badge}
         </span>
@@ -75,7 +81,7 @@ const CategoryIcon = (
   </svg>
 );
 
-export default function Sidebar({ onClose }: SidebarProps): React.ReactElement {
+export default function Sidebar({ onClose, collapsed, onToggleCollapse }: SidebarProps): React.ReactElement {
   const { categories } = useCategories();
   const navigate = useNavigate();
 
@@ -85,29 +91,50 @@ export default function Sidebar({ onClose }: SidebarProps): React.ReactElement {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background border-r border-border">
-      {/* Logo */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full bg-background border-r border-border overflow-hidden">
+      {/* Logo + collapse toggle */}
+      <div className={clsx('p-4 border-b border-border flex items-center gap-2', collapsed && 'justify-center flex-col py-3')}>
+        <div className={clsx('flex items-center gap-2', collapsed && 'justify-center')}>
           <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7M6 17a1 1 0 110-2 1 1 0 010 2z" />
             </svg>
           </div>
-          <div>
-            <h1 className="text-base font-display font-bold text-text-primary leading-none">FeedWatch</h1>
-            <p className="text-[10px] text-text-secondary mt-0.5">RSS Intelligence</p>
-          </div>
+          {!collapsed && (
+            <div>
+              <h1 className="text-base font-display font-bold text-text-primary leading-none">FeedWatch</h1>
+              <p className="text-[10px] text-text-secondary mt-0.5">RSS Intelligence</p>
+            </div>
+          )}
         </div>
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className={clsx(
+              'p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface transition-colors flex-shrink-0',
+              !collapsed && 'ml-auto'
+            )}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg
+              className={clsx('w-4 h-4 transition-transform duration-300', collapsed && 'rotate-180')}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        <NavItem to="/" icon={DashboardIcon} label="Dashboard" onClick={onClose} />
-        <NavItem to="/feeds" icon={FeedsIcon} label="All Feeds" onClick={onClose} />
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto overflow-x-hidden">
+        <NavItem to="/" icon={DashboardIcon} label="Dashboard" onClick={onClose} collapsed={collapsed} />
+        <NavItem to="/feeds" icon={FeedsIcon} label="All Feeds" onClick={onClose} collapsed={collapsed} />
 
-        {/* Categories section */}
-        {categories.length > 0 && (
+        {/* Categories section - full when expanded */}
+        {!collapsed && categories.length > 0 && (
           <div className="pt-3">
             <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider px-3 mb-2">
               Categories
@@ -130,9 +157,25 @@ export default function Sidebar({ onClose }: SidebarProps): React.ReactElement {
           </div>
         )}
 
+        {/* Categories - icon-only when collapsed */}
+        {collapsed && categories.length > 0 && (
+          <div className="pt-2 space-y-0.5">
+            {categories.slice(0, 6).map((cat) => (
+              <button
+                key={cat.category}
+                onClick={() => handleCategoryClick(cat.category)}
+                title={cat.category}
+                className="w-full flex justify-center items-center px-2 py-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface/60 border border-transparent transition-all duration-150"
+              >
+                <span className="w-4 h-4 flex-shrink-0">{CategoryIcon}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="pt-3 border-t border-border mt-3">
-          <NavItem to="/sources" icon={SourcesIcon} label="Sources" onClick={onClose} />
-          <NavItem to="/settings" icon={SettingsIcon} label="Settings" onClick={onClose} />
+          <NavItem to="/sources" icon={SourcesIcon} label="Sources" onClick={onClose} collapsed={collapsed} />
+          <NavItem to="/settings" icon={SettingsIcon} label="Settings" onClick={onClose} collapsed={collapsed} />
         </div>
       </nav>
     </div>

@@ -29,6 +29,11 @@ app.use('/api/feeds', feedsRouter);
 app.use('/api/sources', sourcesRouter);
 app.use('/api/refresh', refreshRouter);
 
+// Catch-all: reject any non-API requests
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
 // Initialize database and sources
 try {
   // DB is initialized by importing the module

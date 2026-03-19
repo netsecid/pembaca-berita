@@ -4,6 +4,7 @@ import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 import FeedCard from '../components/FeedCard';
 import SkeletonCard from '../components/SkeletonCard';
+import ExecutiveSummary from '../components/ExecutiveSummary';
 import { useSettingsStore } from '../store/settingsStore';
 import type { FeedStats, FeedItem } from '../types';
 
@@ -116,6 +117,9 @@ export default function Dashboard(): React.ReactElement {
           </p>
         </div>
       </div>
+
+      {/* Executive Summary */}
+      <ExecutiveSummary items={topItems} windowHours={feedWindowHours} />
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

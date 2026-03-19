@@ -55,4 +55,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_feed_items_severity ON feed_items(severity);
 `);
 
+// Migrate: add new columns if they don't exist (safe on existing databases)
+const newColumns: [string, string][] = [
+  ['cve_ids', 'TEXT'],
+  ['affected_products', 'TEXT'],
+  ['malware_families', 'TEXT'],
+];
+for (const [col, type] of newColumns) {
+  try {
+    db.exec(`ALTER TABLE feed_items ADD COLUMN ${col} ${type}`);
+  } catch {
+    // Column already exists – ignore
+  }
+}
+
 export default db;

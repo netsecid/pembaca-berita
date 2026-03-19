@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import clsx from 'clsx';
 import { useSettingsStore } from '../store/settingsStore';
@@ -63,14 +63,18 @@ export default function Settings(): React.ReactElement {
     feedWindowHours,
     refreshIntervalMinutes,
     theme,
+    customKeywords,
     updateAISettings,
     updateFeedWindow,
     updateRefreshInterval,
     updateTheme,
+    setCustomKeywords,
   } = useSettingsStore();
 
   const { addToast } = useToast();
   const [testingConnection, setTestingConnection] = useState(false);
+  const [newKeyword, setNewKeyword] = useState('');
+  const keywordInputRef = useRef<HTMLInputElement>(null);
   const [customModelInput, setCustomModelInput] = useState(
     ai.provider === 'custom' ? ai.model : ''
   );
@@ -331,6 +335,81 @@ export default function Settings(): React.ReactElement {
             ))}
           </div>
         </Field>
+      </Section>
+
+      {/* Custom Keywords */}
+      <Section
+        title="Custom Keywords"
+        description="Define keywords relevant to your environment (e.g. infrastructure stack, company names, countries). Feed items containing these keywords will be highlighted and their urgency/severity automatically boosted by one level."
+      >
+        <Field label="Add Keyword">
+          <div className="flex gap-2">
+            <input
+              ref={keywordInputRef}
+              type="text"
+              placeholder="e.g. Indonesia, AWS, CompanyName, Log4j"
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newKeyword.trim()) {
+                  const kw = newKeyword.trim();
+                  if (!customKeywords.includes(kw)) {
+                    setCustomKeywords([...customKeywords, kw]);
+                  }
+                  setNewKeyword('');
+                }
+              }}
+              className={inputClass}
+            />
+            <button
+              onClick={() => {
+                const kw = newKeyword.trim();
+                if (kw && !customKeywords.includes(kw)) {
+                  setCustomKeywords([...customKeywords, kw]);
+                }
+                setNewKeyword('');
+                keywordInputRef.current?.focus();
+              }}
+              disabled={!newKeyword.trim()}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-sans flex-shrink-0"
+            >
+              Add
+            </button>
+          </div>
+        </Field>
+
+        {customKeywords.length > 0 ? (
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary mb-2 font-sans">Active Keywords ({customKeywords.length})</label>
+            <div className="flex flex-wrap gap-2">
+              {customKeywords.map((kw) => (
+                <span
+                  key={kw}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 font-sans"
+                >
+                  {kw}
+                  <button
+                    onClick={() => setCustomKeywords(customKeywords.filter((k) => k !== kw))}
+                    className="w-3.5 h-3.5 rounded-full hover:bg-yellow-500/20 flex items-center justify-center transition-colors"
+                    title={`Remove "${kw}"`}
+                  >
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={() => setCustomKeywords([])}
+              className="mt-3 text-xs text-red-400 hover:text-red-300 font-sans transition-colors"
+            >
+              Clear all keywords
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-text-secondary font-sans opacity-60">No keywords configured. Add keywords above to start matching.</p>
+        )}
       </Section>
 
       {/* Appearance */}

@@ -7,6 +7,7 @@ import { useSettingsStore } from '../store/settingsStore';
 
 export default function Layout(): React.ReactElement {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const { addToast } = useToast();
@@ -60,8 +61,12 @@ export default function Layout(): React.ReactElement {
       )}
 
       {/* Sidebar - desktop */}
-      <div className="hidden lg:flex lg:flex-col w-64 flex-shrink-0 h-full">
-        <Sidebar />
+      <div
+        className={`hidden lg:flex lg:flex-col flex-shrink-0 h-full transition-all duration-300 ${
+          sidebarCollapsed ? 'w-14' : 'w-64'
+        }`}
+      >
+        <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((c) => !c)} />
       </div>
 
       {/* Sidebar - mobile */}

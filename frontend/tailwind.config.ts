@@ -6,12 +6,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#0f1117',
-        surface: '#1a1d27',
-        border: '#2a2d3a',
-        'text-primary': '#e8eaf0',
-        'text-secondary': '#8b91a8',
-        accent: '#4f8ef7',
+        background: 'rgb(var(--color-background) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        border: 'rgb(var(--color-border) / <alpha-value>)',
+        'text-primary': 'rgb(var(--color-text-primary) / <alpha-value>)',
+        'text-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
         urgency: {
           critical: '#ef4444',
           high: '#f97316',

@@ -18,6 +18,9 @@ export interface FeedItem {
   target_country?: string[];
   ttps?: string[];
   tags?: string[];
+  cve_ids?: string[];
+  affected_products?: string[];
+  malware_families?: string[];
 }
 
 export interface Source {
@@ -48,6 +51,7 @@ export interface AppSettings {
   feedWindowHours: number;
   refreshIntervalMinutes: number;
   theme: 'dark' | 'light';
+  customKeywords: string[];
 }
 
 export interface CategoryItem {

@@ -3,21 +3,32 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark mode defaults (space-separated RGB for Tailwind opacity support) */
+  :root {
+    --color-background: 15 17 23;
+    --color-surface: 26 29 39;
+    --color-border: 42 45 58;
+    --color-text-primary: 232 234 240;
+    --color-text-secondary: 139 145 168;
+    --color-accent: 79 142 247;
+  }
+
+  /* Light mode overrides */
+  html.light {
+    --color-background: 245 246 250;
+    --color-surface: 255 255 255;
+    --color-border: 226 228 236;
+    --color-text-primary: 26 29 39;
+    --color-text-secondary: 90 96 114;
+    --color-accent: 37 99 235;
+  }
+
   html {
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
   }
 
   body {
     @apply bg-background text-text-primary;
-  }
-
-  /* Light mode overrides */
-  html.light {
-    --color-background: #f5f6fa;
-    --color-surface: #ffffff;
-    --color-border: #e2e4ec;
-    --color-text-primary: #1a1d27;
-    --color-text-secondary: #5a6072;
   }
 
   /* Scrollbar styling */

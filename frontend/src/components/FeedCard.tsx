@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
 import type { FeedItem } from '../types';
+import { useSettingsStore } from '../store/settingsStore';
+import { applyKeywordMatch } from '../utils/keywordMatcher';
 
 interface FeedCardProps {
   item: FeedItem;
@@ -73,8 +75,14 @@ function Chip({ label, className }: { label: string; className?: string }): Reac
 
 export default function FeedCard({ item }: FeedCardProps): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
+  const { customKeywords } = useSettingsStore();
 
-  const borderColor = item.urgency ? URGENCY_COLORS[item.urgency] ?? 'border-l-border' : 'border-l-border';
+  const { isKeywordMatch, matchedKeywords, boostedUrgency, boostedSeverity } = applyKeywordMatch(item, customKeywords);
+
+  const displayUrgency = boostedUrgency ?? item.urgency;
+  const displaySeverity = boostedSeverity ?? item.severity;
+
+  const borderColor = displayUrgency ? URGENCY_COLORS[displayUrgency] ?? 'border-l-border' : 'border-l-border';
 
   const publishedAt = formatDistanceToNow(new Date(item.published_at), { addSuffix: true });
 
@@ -116,18 +124,38 @@ export default function FeedCard({ item }: FeedCardProps): React.ReactElement {
         {item.title}
       </a>
 
+      {/* Keyword match banner */}
+      {isKeywordMatch && (
+        <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20">
+          <svg className="w-3 h-3 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          </svg>
+          <span className="text-[10px] text-yellow-400 font-semibold">Keyword match:</span>
+          <div className="flex flex-wrap gap-1">
+            {matchedKeywords.map((kw) => (
+              <span key={kw} className="text-[10px] text-yellow-300 bg-yellow-500/10 px-1.5 py-0.5 rounded font-mono border border-yellow-500/20">
+                {kw}
+              </span>
+            ))}
+          </div>
+          {item.urgency && item.urgency !== displayUrgency && (
+            <span className="ml-auto text-[10px] text-yellow-400 opacity-70 flex-shrink-0">↑ urgency boosted</span>
+          )}
+        </div>
+      )}
+
       {/* Badges row */}
       <div className="flex flex-wrap gap-1.5 mb-2">
-        {item.urgency && (
+        {displayUrgency && (
           <Chip
-            label={item.urgency.toUpperCase()}
-            className={clsx('text-[10px] font-bold', URGENCY_BADGE[item.urgency])}
+            label={displayUrgency.toUpperCase()}
+            className={clsx('text-[10px] font-bold', URGENCY_BADGE[displayUrgency])}
           />
         )}
-        {item.severity && (
+        {displaySeverity && (
           <Chip
-            label={item.severity}
-            className={clsx('text-[10px]', SEVERITY_BADGE[item.severity])}
+            label={displaySeverity}
+            className={clsx('text-[10px]', SEVERITY_BADGE[displaySeverity])}
           />
         )}
         {item.category && (
@@ -212,6 +240,52 @@ export default function FeedCard({ item }: FeedCardProps): React.ReactElement {
                       >
                         {ttp}
                       </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {item.cve_ids && item.cve_ids.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1">CVE IDs</p>
+                  <div className="flex flex-wrap gap-1">
+                    {item.cve_ids.map((cve) => (
+                      <span
+                        key={cve}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono bg-red-500/10 text-red-300 border border-red-500/20"
+                      >
+                        {cve}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {item.affected_products && item.affected_products.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1">Affected Products</p>
+                  <div className="flex flex-wrap gap-1">
+                    {item.affected_products.map((product) => (
+                      <Chip
+                        key={product}
+                        label={product}
+                        className="text-[10px] bg-orange-500/10 text-orange-300 border-orange-500/20"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {item.malware_families && item.malware_families.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1">Malware Families</p>
+                  <div className="flex flex-wrap gap-1">
+                    {item.malware_families.map((malware) => (
+                      <Chip
+                        key={malware}
+                        label={malware}
+                        className="text-[10px] bg-red-500/15 text-red-300 border-red-500/30 font-mono"
+                      />
                     ))}
                   </div>
                 </div>

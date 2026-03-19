@@ -25,6 +25,9 @@ export interface FeedItem {
   target_country?: string[];
   ttps?: string[];
   tags?: string[];
+  cve_ids?: string[];
+  affected_products?: string[];
+  malware_families?: string[];
 }
 
 export interface FeedItemRow {
@@ -47,6 +50,9 @@ export interface FeedItemRow {
   target_country?: string;
   ttps?: string;
   tags?: string;
+  cve_ids?: string;
+  affected_products?: string;
+  malware_families?: string;
 }
 
 export interface Source {
@@ -115,6 +121,9 @@ function rowToFeedItem(row: FeedItemRow): FeedItem {
     target_country: parseJsonField(row.target_country),
     ttps: parseJsonField(row.ttps),
     tags: parseJsonField(row.tags),
+    cve_ids: parseJsonField(row.cve_ids),
+    affected_products: parseJsonField(row.affected_products),
+    malware_families: parseJsonField(row.malware_families),
   };
 }
 
@@ -285,6 +294,9 @@ export interface AIAnalysis {
   target_country?: string[];
   ttps?: string[];
   tags?: string[];
+  cve_ids?: string[];
+  affected_products?: string[];
+  malware_families?: string[];
 }
 
 export function updateFeedAnalysis(id: string, analysis: AIAnalysis): void {
@@ -299,7 +311,10 @@ export function updateFeedAnalysis(id: string, analysis: AIAnalysis): void {
       threat_actor = @threat_actor,
       target_country = @target_country,
       ttps = @ttps,
-      tags = @tags
+      tags = @tags,
+      cve_ids = @cve_ids,
+      affected_products = @affected_products,
+      malware_families = @malware_families
     WHERE id = @id
   `);
 
@@ -314,6 +329,9 @@ export function updateFeedAnalysis(id: string, analysis: AIAnalysis): void {
     target_country: analysis.target_country ? JSON.stringify(analysis.target_country) : null,
     ttps: analysis.ttps ? JSON.stringify(analysis.ttps) : null,
     tags: analysis.tags ? JSON.stringify(analysis.tags) : null,
+    cve_ids: analysis.cve_ids ? JSON.stringify(analysis.cve_ids) : null,
+    affected_products: analysis.affected_products ? JSON.stringify(analysis.affected_products) : null,
+    malware_families: analysis.malware_families ? JSON.stringify(analysis.malware_families) : null,
   });
 }
 

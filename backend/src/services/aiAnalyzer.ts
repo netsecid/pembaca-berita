@@ -9,26 +9,29 @@ export interface AISettings {
 }
 
 const ANALYSIS_PROMPT = (title: string, description: string, sourceName: string): string => `
-You are a cybersecurity intelligence analyst. Analyze the following news article and return a structured JSON response.
+You are a senior cybersecurity threat intelligence analyst. Analyze the following news article and return a structured JSON response.
 
 Source: ${sourceName}
 Title: ${title}
 Content: ${description.substring(0, 2000)}
 
-Return ONLY a valid JSON object with these fields:
+Return ONLY a valid JSON object with these exact fields (use empty arrays [] when no data is found — never omit a field):
 {
-  "summary": "2-3 sentence summary of the key security implications",
-  "urgency": "critical|high|medium|low",
+  "summary": "2-3 sentence summary focused on security implications and what defenders should know",
+  "urgency": "critical|high|medium|low  (critical=active exploitation/immediate risk, high=significant threat, medium=notable but limited, low=informational/advisory)",
   "severity": "critical|high|medium|low|informational",
   "category": "one of: Vulnerability, Malware, Data Breach, Threat Intelligence, Advisory, Ransomware, APT, Phishing, Supply Chain, Zero-Day, Patch, Other",
-  "target_industry": ["array of affected industries, e.g. Finance, Healthcare, Government"],
-  "threat_actor": ["array of threat actor names if mentioned, empty if none"],
-  "target_country": ["array of targeted countries if mentioned, empty if none"],
-  "ttps": ["array of MITRE ATT&CK techniques if applicable, e.g. T1566.001 Phishing"],
-  "tags": ["array of relevant tags/keywords"]
+  "target_industry": ["affected industry verticals — be specific: Finance, Healthcare, Government, Energy, Telecommunications, Retail, Manufacturing, Defense, Education, Technology, Critical Infrastructure, etc."],
+  "threat_actor": ["named threat actor groups or individuals explicitly mentioned, e.g. APT28, Lazarus Group, REvil — empty if none named"],
+  "target_country": ["targeted or victim nations explicitly mentioned, e.g. United States, Indonesia, Germany — empty if none"],
+  "ttps": ["MITRE ATT&CK technique IDs with names if inferable, e.g. T1566.001 Spearphishing Attachment, T1190 Exploit Public-Facing Application"],
+  "cve_ids": ["CVE identifiers explicitly mentioned, e.g. CVE-2024-12345 — empty if none"],
+  "affected_products": ["specific software, platforms, hardware or services mentioned as vulnerable or targeted, e.g. Microsoft Exchange, Cisco IOS, Apache Log4j, Fortinet FortiOS"],
+  "malware_families": ["specific malware family or tool names mentioned, e.g. Cobalt Strike, Emotet, LockBit, QakBot — empty if none"],
+  "tags": ["5-10 concise keyword tags summarizing the article topic"]
 }
 
-Be concise and accurate. Base analysis only on the provided content.
+Be thorough in extraction. If a country, product, CVE, or threat actor is mentioned anywhere in the content, include it.
 `.trim();
 
 interface OpenAIResponse {
