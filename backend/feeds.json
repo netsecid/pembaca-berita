@@ -1,0 +1,12 @@
+[
+  {"id": "1", "name": "The Hacker News", "url": "https://feeds.feedburner.com/TheHackersNews", "enabled": true},
+  {"id": "2", "name": "Krebs on Security", "url": "https://krebsonsecurity.com/feed/", "enabled": true},
+  {"id": "3", "name": "Bleeping Computer", "url": "https://www.bleepingcomputer.com/feed/", "enabled": true},
+  {"id": "4", "name": "Dark Reading", "url": "https://www.darkreading.com/rss.xml", "enabled": true},
+  {"id": "5", "name": "Schneier on Security", "url": "https://www.schneier.com/feed/atom", "enabled": true},
+  {"id": "6", "name": "CISA Alerts", "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml", "enabled": true},
+  {"id": "7", "name": "SANS ISC", "url": "https://isc.sans.edu/rssfeed_full.xml", "enabled": true},
+  {"id": "8", "name": "Threatpost", "url": "https://threatpost.com/feed/", "enabled": true},
+  {"id": "9", "name": "SecurityWeek", "url": "https://feeds.feedburner.com/Securityweek", "enabled": true},
+  {"id": "10", "name": "Recorded Future", "url": "https://www.recordedfuture.com/feed", "enabled": true}
+]
