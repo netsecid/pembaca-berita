@@ -1,6 +1,25 @@
 import axios from 'axios';
 import { FeedItem, AIAnalysis, updateFeedAnalysis, getUnanalyzedItems } from './feedStore';
 
+// Silent prompt injection guardrails — applied before any user-supplied prompt is used
+function sanitizeCustomPrompt(raw: string | undefined): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  let s = raw.substring(0, 3000).replace(/<[^>]+>/g, '');
+  const blockedPatterns = [
+    /ignore\s+(all\s+)?previous\s+(instructions?|prompts?|context)/gi,
+    /you\s+are\s+now\s+(a|an)\s+/gi,
+    /disregard\s+(all\s+)?previous/gi,
+    /forget\s+(all\s+)?previous/gi,
+    /override\s+(all\s+)?instructions/gi,
+    /\[system\]/gi,
+    /\[INST\]/g,
+    /<\|[^|]*\|>/g,
+    /#+\s*system\s*prompt/gi,
+  ];
+  for (const p of blockedPatterns) s = s.replace(p, '');
+  return s.trim() || undefined;
+}
+
 export interface AISettings {
   provider: 'openai' | 'anthropic' | 'gemini' | 'custom';
   apiKey: string;
@@ -8,8 +27,10 @@ export interface AISettings {
   baseUrl?: string;
 }
 
-const ANALYSIS_PROMPT = (title: string, description: string, sourceName: string): string => `
-You are a senior cybersecurity threat intelligence analyst. Analyze the following news article and return a structured JSON response.
+const DEFAULT_SYSTEM_INSTRUCTIONS = `You are a senior cybersecurity threat intelligence analyst.`;
+
+const ANALYSIS_PROMPT = (title: string, description: string, sourceName: string, customInstructions?: string): string => `
+${customInstructions ? customInstructions + '\n\n' : DEFAULT_SYSTEM_INSTRUCTIONS + ' '}Analyze the following news article and return a structured JSON response.
 
 Source: ${sourceName}
 Title: ${title}
@@ -151,11 +172,13 @@ async function callGemini(
 
 export async function analyzeItem(
   item: FeedItem,
-  settings: AISettings
+  settings: AISettings,
+  customPrompt?: string
 ): Promise<AIAnalysis | null> {
   if (!settings.apiKey) return null;
 
-  const prompt = ANALYSIS_PROMPT(item.title, item.description, item.source_name);
+  const sanitized = sanitizeCustomPrompt(customPrompt);
+  const prompt = ANALYSIS_PROMPT(item.title, item.description, item.source_name, sanitized);
 
   try {
     let responseText = '';
@@ -204,7 +227,8 @@ function sleep(ms: number): Promise<void> {
 export async function analyzeNewItems(
   items: FeedItem[],
   settings: AISettings,
-  delayMs = 500
+  delayMs = 500,
+  customPrompt?: string
 ): Promise<number> {
   if (!settings.apiKey || items.length === 0) return 0;
 
@@ -212,7 +236,7 @@ export async function analyzeNewItems(
 
   for (const item of items) {
     try {
-      const analysis = await analyzeItem(item, settings);
+      const analysis = await analyzeItem(item, settings, customPrompt);
       if (analysis) {
         updateFeedAnalysis(item.id, analysis);
         analyzed++;

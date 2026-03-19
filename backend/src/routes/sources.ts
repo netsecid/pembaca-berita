@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import Parser from 'rss-parser';
-import { getAllSources, addSource, removeSource } from '../services/feedStore';
+import { getAllSources, addSource, removeSource, updateSourceFetchFullContent } from '../services/feedStore';
 
 const router = Router();
 
@@ -51,6 +51,22 @@ router.delete('/:id', (req: Request, res: Response) => {
     const { id } = req.params;
     removeSource(id);
     res.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
+  }
+});
+
+router.patch('/:id/full-content', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { enabled } = req.body as { enabled?: boolean };
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({ error: 'enabled (boolean) is required' });
+      return;
+    }
+    updateSourceFetchFullContent(id, enabled);
+    res.json({ success: true, id, fetch_full_content: enabled });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: message });

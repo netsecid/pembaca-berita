@@ -93,6 +93,18 @@ export default function Sources(): React.ReactElement {
     }
   };
 
+  const handleToggleFullContent = async (id: string, enabled: boolean) => {
+    try {
+      await axios.patch(`/api/sources/${id}/full-content`, { enabled });
+      setSources((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, fetch_full_content: enabled } : s))
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update source';
+      addToast('error', message);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (deleteConfirm !== id) {
       setDeleteConfirm(id);
@@ -218,6 +230,7 @@ export default function Sources(): React.ReactElement {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans">Name</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans hidden sm:table-cell">URL</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans hidden lg:table-cell">Full Content</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans hidden md:table-cell">Last Fetched</th>
                   <th className="text-right px-5 py-3 text-xs font-semibold text-text-secondary uppercase tracking-wider font-sans">Actions</th>
                 </tr>
@@ -248,6 +261,21 @@ export default function Sources(): React.ReactElement {
                         <span className={`w-1.5 h-1.5 rounded-full ${source.enabled ? 'bg-green-400' : 'bg-text-secondary'}`} />
                         {source.enabled ? 'Active' : 'Disabled'}
                       </span>
+                    </td>
+                    <td className="px-5 py-3 hidden lg:table-cell">
+                      <button
+                        onClick={() => void handleToggleFullContent(source.id, !source.fetch_full_content)}
+                        title={source.fetch_full_content ? 'Disable full content fetch' : 'Enable full content fetch'}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          source.fetch_full_content ? 'bg-accent' : 'bg-border'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            source.fetch_full_content ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </td>
                     <td className="px-5 py-3 hidden md:table-cell">
                       <span className="text-xs text-text-secondary font-sans">

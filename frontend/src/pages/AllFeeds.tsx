@@ -4,6 +4,7 @@ import SkeletonCard from '../components/SkeletonCard';
 import { useFeeds } from '../hooks/useFeeds';
 import { useCategories } from '../hooks/useCategories';
 import { useSettingsStore } from '../store/settingsStore';
+import { applyKeywordMatch } from '../utils/keywordMatcher';
 import clsx from 'clsx';
 
 const URGENCY_OPTIONS = ['critical', 'high', 'medium', 'low'] as const;
@@ -21,14 +22,16 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function AllFeeds(): React.ReactElement {
-  const { feedWindowHours } = useSettingsStore();
+  const { feedWindowHours, customKeywords } = useSettingsStore();
   const { categories } = useCategories();
 
   const [searchInput, setSearchInput] = useState('');
   const [selectedUrgency, setSelectedUrgency] = useState<string>('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [keywordMatchOnly, setKeywordMatchOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const [nonce, setNonce] = useState(0);
   const limit = 20;
 
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -38,6 +41,13 @@ export default function AllFeeds(): React.ReactElement {
     setPage(1);
   }, [debouncedSearch, selectedUrgency, selectedSeverity, selectedCategory]);
 
+  // Listen for global refresh events
+  useEffect(() => {
+    const handler = () => setNonce((n) => n + 1);
+    window.addEventListener('feedwatch-refreshed', handler);
+    return () => window.removeEventListener('feedwatch-refreshed', handler);
+  }, []);
+
   const filters = {
     window: feedWindowHours,
     search: debouncedSearch || undefined,
@@ -46,9 +56,14 @@ export default function AllFeeds(): React.ReactElement {
     category: selectedCategory || undefined,
     page,
     limit,
+    nonce,
   };
 
-  const { feeds, total, loading, error, refetch } = useFeeds(filters);
+  const { feeds: rawFeeds, total, loading, error, refetch } = useFeeds(filters);
+
+  const feeds = keywordMatchOnly && customKeywords.length > 0
+    ? rawFeeds.filter((item) => applyKeywordMatch(item, customKeywords).isKeywordMatch)
+    : rawFeeds;
 
   const totalPages = Math.ceil(total / limit);
 
@@ -57,10 +72,11 @@ export default function AllFeeds(): React.ReactElement {
     setSelectedUrgency('');
     setSelectedSeverity('');
     setSelectedCategory('');
+    setKeywordMatchOnly(false);
     setPage(1);
   }, []);
 
-  const hasFilters = searchInput || selectedUrgency || selectedSeverity || selectedCategory;
+  const hasFilters = searchInput || selectedUrgency || selectedSeverity || selectedCategory || keywordMatchOnly;
 
   return (
     <div className="flex h-full">
@@ -77,6 +93,27 @@ export default function AllFeeds(): React.ReactElement {
             </button>
           )}
         </div>
+
+        {/* Keyword match filter */}
+        {customKeywords.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-text-secondary mb-2 font-sans">Keyword Match</p>
+            <button
+              onClick={() => setKeywordMatchOnly((v) => !v)}
+              className={clsx(
+                'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 font-sans',
+                keywordMatchOnly
+                  ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
+                  : 'bg-background text-text-secondary border-border hover:text-text-primary hover:border-border/80'
+              )}
+            >
+              <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              Keyword matches only
+            </button>
+          </div>
+        )}
 
         {/* Urgency filter */}
         <div>

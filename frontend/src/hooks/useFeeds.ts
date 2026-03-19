@@ -10,6 +10,7 @@ interface FeedFilters {
   search?: string;
   page?: number;
   limit?: number;
+  nonce?: number; // increment to force re-fetch without changing other filters
 }
 
 interface UseFeedsResult {
@@ -58,6 +59,7 @@ export function useFeeds(filters: FeedFilters = {}): UseFeedsResult {
     filters.search,
     filters.page,
     filters.limit,
+    filters.nonce,
   ]);
 
   useEffect(() => {

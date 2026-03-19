@@ -102,8 +102,8 @@ export default function Sidebar({ onClose, collapsed, onToggleCollapse }: Sideba
           </div>
           {!collapsed && (
             <div>
-              <h1 className="text-base font-display font-bold text-text-primary leading-none">FeedWatch</h1>
-              <p className="text-[10px] text-text-secondary mt-0.5">RSS Intelligence</p>
+              <h1 className="text-base font-display font-bold text-text-primary leading-none">Mata-CTI</h1>
+              <p className="text-[10px] text-text-secondary mt-0.5">Threat Intelligence</p>
             </div>
           )}
         </div>

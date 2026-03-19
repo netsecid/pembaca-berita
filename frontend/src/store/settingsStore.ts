@@ -8,6 +8,8 @@ interface SettingsState extends AppSettings {
   updateFeedWindow: (hours: number) => void;
   updateRefreshInterval: (minutes: number) => void;
   setCustomKeywords: (keywords: string[]) => void;
+  setCustomPromptAnalysis: (prompt: string) => void;
+  setCustomPromptSummary: (prompt: string) => void;
 }
 
 function applyTheme(theme: 'dark' | 'light'): void {
@@ -31,6 +33,8 @@ const defaultSettings: AppSettings = {
   refreshIntervalMinutes: 30,
   theme: 'dark',
   customKeywords: [],
+  customPromptAnalysis: '',
+  customPromptSummary: '',
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -53,6 +57,10 @@ export const useSettingsStore = create<SettingsState>()(
       updateRefreshInterval: (refreshIntervalMinutes) => set({ refreshIntervalMinutes }),
 
       setCustomKeywords: (customKeywords) => set({ customKeywords }),
+
+      setCustomPromptAnalysis: (customPromptAnalysis) => set({ customPromptAnalysis }),
+
+      setCustomPromptSummary: (customPromptSummary) => set({ customPromptSummary }),
     }),
     {
       name: 'feedwatch-settings',

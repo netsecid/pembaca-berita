@@ -69,4 +69,11 @@ for (const [col, type] of newColumns) {
   }
 }
 
+// Migrate sources table
+try {
+  db.exec('ALTER TABLE sources ADD COLUMN fetch_full_content INTEGER NOT NULL DEFAULT 0');
+} catch {
+  // Column already exists – ignore
+}
+
 export default db;

@@ -60,6 +60,7 @@ export interface Source {
   name: string;
   url: string;
   enabled: boolean;
+  fetch_full_content: boolean;
   added_at: number;
   last_fetched?: number;
 }
@@ -69,6 +70,7 @@ export interface SourceRow {
   name: string;
   url: string;
   enabled: number;
+  fetch_full_content: number;
   added_at: number;
   last_fetched?: number;
 }
@@ -133,6 +135,7 @@ function rowToSource(row: SourceRow): Source {
     name: row.name,
     url: row.url,
     enabled: row.enabled === 1,
+    fetch_full_content: row.fetch_full_content === 1,
     added_at: row.added_at,
     last_fetched: row.last_fetched,
   };
@@ -193,9 +196,9 @@ export function getAllFeeds(filters: FeedFilters = {}): { items: FeedItem[]; tot
   };
 }
 
-export function getFeedStats(): FeedStats {
-  const windowHours = Number(process.env.FEED_WINDOW_HOURS) || 24;
-  const cutoffTs = Date.now() - windowHours * 60 * 60 * 1000;
+export function getFeedStats(windowHours?: number): FeedStats {
+  const resolvedWindow = windowHours ?? Number(process.env.FEED_WINDOW_HOURS) || 24;
+  const cutoffTs = Date.now() - resolvedWindow * 60 * 60 * 1000;
 
   const totalRow = db
     .prepare('SELECT COUNT(*) as count FROM feed_items WHERE published_at >= ?')
@@ -242,9 +245,9 @@ export function getFeedStats(): FeedStats {
   };
 }
 
-export function getCategories(): { category: string; count: number }[] {
-  const windowHours = Number(process.env.FEED_WINDOW_HOURS) || 24;
-  const cutoffTs = Date.now() - windowHours * 60 * 60 * 1000;
+export function getCategories(windowHours?: number): { category: string; count: number }[] {
+  const resolvedWindow = windowHours ?? Number(process.env.FEED_WINDOW_HOURS) || 24;
+  const cutoffTs = Date.now() - resolvedWindow * 60 * 60 * 1000;
 
   const rows = db
     .prepare(
@@ -364,6 +367,10 @@ export function removeSource(id: string): void {
 
 export function updateSourceLastFetched(id: string, timestamp: number): void {
   db.prepare('UPDATE sources SET last_fetched = ? WHERE id = ?').run(timestamp, id);
+}
+
+export function updateSourceFetchFullContent(id: string, enabled: boolean): void {
+  db.prepare('UPDATE sources SET fetch_full_content = ? WHERE id = ?').run(enabled ? 1 : 0, id);
 }
 
 export function loadSourcesFromFile(): void {

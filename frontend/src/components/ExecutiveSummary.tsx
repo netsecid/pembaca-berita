@@ -43,7 +43,7 @@ async function callAI(prompt: string, provider: string, apiKey: string, model: s
   return '';
 }
 
-function buildPrompt(items: FeedItem[], windowHours: number): string {
+function buildPrompt(items: FeedItem[], windowHours: number, customInstructions?: string): string {
   const analyzed = items.filter((i) => i.ai_analyzed && i.summary);
   const lines = analyzed.slice(0, 30).map((item, idx) => {
     const parts = [`${idx + 1}. [${item.urgency?.toUpperCase() ?? 'UNKNOWN'}] ${item.title}`];
@@ -56,7 +56,7 @@ function buildPrompt(items: FeedItem[], windowHours: number): string {
 
   const rawLines = items.filter((i) => !i.ai_analyzed).slice(0, 10).map((item) => `- ${item.title}`);
 
-  return `You are a senior threat intelligence analyst preparing a concise executive briefing for C-suite leadership.
+  const defaultInstructions = `You are a senior threat intelligence analyst preparing a concise executive briefing for C-suite leadership.
 
 Based on the following ${analyzed.length} AI-analyzed cybersecurity intelligence items from the last ${windowHours} hours${rawLines.length ? ` (plus ${rawLines.length} additional unanalyzed items)` : ''}, write a 3–4 paragraph executive brief.
 
@@ -66,7 +66,11 @@ Structure your response as:
 3. **Sectors & Nations at Risk** – Key verticals and geographies under pressure
 4. **Strategic Posture & Recommendations** – Concise, actionable guidance for leadership
 
-Tone: Authoritative, direct, and jargon-free. Suitable for a CISO briefing a board of directors.
+Tone: Authoritative, direct, and jargon-free. Suitable for a CISO briefing a board of directors.`;
+
+  const systemInstructions = customInstructions?.trim() || defaultInstructions;
+
+  return `${systemInstructions}
 
 ---
 INTELLIGENCE ITEMS:
@@ -78,7 +82,7 @@ Write the executive brief now:`;
 }
 
 export default function ExecutiveSummary({ items, windowHours }: { items: FeedItem[]; windowHours: number }): React.ReactElement {
-  const { ai } = useSettingsStore();
+  const { ai, customPromptSummary } = useSettingsStore();
   const [brief, setBrief] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -91,7 +95,7 @@ export default function ExecutiveSummary({ items, windowHours }: { items: FeedIt
     setLoading(true);
     setError('');
     try {
-      const prompt = buildPrompt(items, windowHours);
+      const prompt = buildPrompt(items, windowHours, customPromptSummary || undefined);
       const result = await callAI(prompt, ai.provider, ai.apiKey, ai.model, ai.baseUrl);
       setBrief(result);
       setGeneratedAt(new Date());

@@ -32,9 +32,10 @@ router.get('/', (req: Request, res: Response) => {
   }
 });
 
-router.get('/stats', (_req: Request, res: Response) => {
+router.get('/stats', (req: Request, res: Response) => {
   try {
-    const stats = getFeedStats();
+    const { window } = req.query as Record<string, string>;
+    const stats = getFeedStats(window ? Number(window) : undefined);
     res.json(stats);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -42,9 +43,10 @@ router.get('/stats', (_req: Request, res: Response) => {
   }
 });
 
-router.get('/categories', (_req: Request, res: Response) => {
+router.get('/categories', (req: Request, res: Response) => {
   try {
-    const categories = getCategories();
+    const { window } = req.query as Record<string, string>;
+    const categories = getCategories(window ? Number(window) : undefined);
     res.json(categories);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

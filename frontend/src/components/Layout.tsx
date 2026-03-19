@@ -11,7 +11,7 @@ export default function Layout(): React.ReactElement {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const { addToast } = useToast();
-  const { theme, updateTheme, ai } = useSettingsStore();
+  const { theme, updateTheme, ai, customPromptAnalysis } = useSettingsStore();
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
@@ -24,6 +24,7 @@ export default function Layout(): React.ReactElement {
         body.provider = ai.provider;
         body.model = ai.model;
         if (ai.baseUrl) body.baseUrl = ai.baseUrl;
+        if (customPromptAnalysis.trim()) body.customPrompt = customPromptAnalysis.trim();
       }
 
       const response = await axios.post<{ success: boolean; message: string; newItems: number }>(
@@ -33,13 +34,15 @@ export default function Layout(): React.ReactElement {
 
       setLastRefresh(new Date());
       addToast('success', response.data.message || `Fetched ${response.data.newItems} new items`);
+      // Signal all pages to re-fetch their data
+      window.dispatchEvent(new CustomEvent('feedwatch-refreshed'));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Refresh failed';
       addToast('error', message);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshing, ai, addToast]);
+  }, [refreshing, ai, customPromptAnalysis, addToast]);
 
   const toggleTheme = () => {
     updateTheme(theme === 'dark' ? 'light' : 'dark');
@@ -49,6 +52,10 @@ export default function Layout(): React.ReactElement {
     if (!lastRefresh) return null;
     return lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const providerLabel = ai.apiKey
+    ? `${ai.provider === 'openai' ? 'OpenAI' : ai.provider === 'anthropic' ? 'Anthropic' : ai.provider === 'gemini' ? 'Gemini' : 'Custom'} · ${ai.model.split('/').pop()?.split('-').slice(0, 3).join('-') ?? ai.model}`
+    : null;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -81,7 +88,7 @@ export default function Layout(): React.ReactElement {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background flex-shrink-0">
+        <header className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-background flex-shrink-0">
           {/* Mobile menu button */}
           <button
             onClick={() => setSidebarOpen(true)}
@@ -93,14 +100,22 @@ export default function Layout(): React.ReactElement {
           </button>
 
           {/* Title - mobile only */}
-          <span className="lg:hidden font-display font-bold text-text-primary text-lg">FeedWatch</span>
+          <span className="lg:hidden font-display font-bold text-text-primary text-base">Mata-CTI</span>
 
           <div className="flex-1" />
 
+          {/* Active AI provider badge */}
+          {providerLabel && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface border border-border text-[11px] text-text-secondary font-sans">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
+              {providerLabel}
+            </div>
+          )}
+
           {/* Last refresh */}
           {lastRefresh && (
-            <span className="hidden sm:block text-xs text-text-secondary font-sans">
-              Last refresh: {formatLastRefresh()}
+            <span className="hidden md:block text-xs text-text-secondary font-sans opacity-60">
+              {formatLastRefresh()}
             </span>
           )}
 
@@ -118,7 +133,7 @@ export default function Layout(): React.ReactElement {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            <span className="hidden sm:inline">{refreshing ? 'Refreshing…' : 'Refresh'}</span>
           </button>
 
           {/* Theme toggle */}

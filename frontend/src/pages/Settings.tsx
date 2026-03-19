@@ -64,11 +64,15 @@ export default function Settings(): React.ReactElement {
     refreshIntervalMinutes,
     theme,
     customKeywords,
+    customPromptAnalysis,
+    customPromptSummary,
     updateAISettings,
     updateFeedWindow,
     updateRefreshInterval,
     updateTheme,
     setCustomKeywords,
+    setCustomPromptAnalysis,
+    setCustomPromptSummary,
   } = useSettingsStore();
 
   const { addToast } = useToast();
@@ -78,6 +82,16 @@ export default function Settings(): React.ReactElement {
   const [customModelInput, setCustomModelInput] = useState(
     ai.provider === 'custom' ? ai.model : ''
   );
+  const [draftAnalysisPrompt, setDraftAnalysisPrompt] = useState(customPromptAnalysis);
+  const [draftSummaryPrompt, setDraftSummaryPrompt] = useState(customPromptSummary);
+  const [promptSaved, setPromptSaved] = useState(false);
+
+  const handleSavePrompts = () => {
+    setCustomPromptAnalysis(draftAnalysisPrompt);
+    setCustomPromptSummary(draftSummaryPrompt);
+    setPromptSaved(true);
+    setTimeout(() => setPromptSaved(false), 2000);
+  };
 
   const handleProviderChange = (provider: AISettings['provider']) => {
     const defaultModels = PROVIDER_MODELS[provider];
@@ -165,14 +179,14 @@ export default function Settings(): React.ReactElement {
       <div>
         <h1 className="text-2xl font-display font-bold text-text-primary">Settings</h1>
         <p className="text-sm text-text-secondary mt-1 font-sans">
-          Configure FeedWatch to match your workflow
+          Configure Mata-CTI to match your workflow
         </p>
       </div>
 
       {/* AI Provider */}
       <Section
         title="AI Provider"
-        description="Configure an AI provider to enable intelligent feed analysis, categorization, and threat intelligence enrichment."
+        description="Configure an AI provider to enable intelligent feed analysis, categorization, and threat intelligence enrichment. Your API key is stored only in your browser."
       >
         <Field label="Provider">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -412,10 +426,71 @@ export default function Settings(): React.ReactElement {
         )}
       </Section>
 
+      {/* Custom Prompts */}
+      <Section
+        title="AI Prompt Configuration"
+        description="Customize the instructions used when analyzing feed items and generating the executive brief. Leave blank to use the default prompts."
+      >
+        <Field
+          label="Feed Analysis Prompt"
+          hint="Prepended to each feed item analysis request. Use this to add custom context, focus areas, or formatting instructions."
+        >
+          <textarea
+            rows={5}
+            placeholder="e.g. Focus especially on threats targeting Southeast Asian financial institutions. Prioritize CVEs with public exploit code..."
+            value={draftAnalysisPrompt}
+            onChange={(e) => setDraftAnalysisPrompt(e.target.value)}
+            className={`${inputClass} resize-y min-h-[80px]`}
+          />
+        </Field>
+
+        <Field
+          label="Executive Brief Prompt"
+          hint="Replaces the default executive brief instructions. Must guide the model to produce a structured briefing suitable for C-suite leadership."
+        >
+          <textarea
+            rows={5}
+            placeholder="e.g. You are a CISO briefing a board of directors for a Southeast Asian bank. Focus on regulatory risk and financial sector threats..."
+            value={draftSummaryPrompt}
+            onChange={(e) => setDraftSummaryPrompt(e.target.value)}
+            className={`${inputClass} resize-y min-h-[80px]`}
+          />
+        </Field>
+
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            onClick={handleSavePrompts}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors font-sans"
+          >
+            {promptSaved ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Saved!
+              </>
+            ) : (
+              'Save Prompts'
+            )}
+          </button>
+          {(draftAnalysisPrompt || draftSummaryPrompt) && (
+            <button
+              onClick={() => {
+                setDraftAnalysisPrompt('');
+                setDraftSummaryPrompt('');
+              }}
+              className="text-xs text-red-400 hover:text-red-300 font-sans transition-colors"
+            >
+              Reset to defaults
+            </button>
+          )}
+        </div>
+      </Section>
+
       {/* Appearance */}
       <Section
         title="Appearance"
-        description="Customize the visual theme of FeedWatch."
+        description="Customize the visual theme of Mata-CTI."
       >
         <Field label="Color Theme">
           <div className="flex items-center gap-3">
@@ -454,7 +529,7 @@ export default function Settings(): React.ReactElement {
       {/* About */}
       <div className="text-center py-4">
         <p className="text-xs text-text-secondary font-sans opacity-50">
-          FeedWatch v1.0.0 · RSS Intelligence Platform
+          Mata-CTI v1.0.0 · Threat Intelligence Platform
         </p>
       </div>
     </div>

@@ -28,6 +28,7 @@ export interface Source {
   name: string;
   url: string;
   enabled: boolean;
+  fetch_full_content: boolean;
   added_at: number;
   last_fetched?: number;
 }
@@ -52,6 +53,8 @@ export interface AppSettings {
   refreshIntervalMinutes: number;
   theme: 'dark' | 'light';
   customKeywords: string[];
+  customPromptAnalysis: string;
+  customPromptSummary: string;
 }
 
 export interface CategoryItem {

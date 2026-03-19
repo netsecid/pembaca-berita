@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
@@ -46,58 +46,58 @@ export default function Dashboard(): React.ReactElement {
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const { feedWindowHours } = useSettingsStore();
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoadingStats(true);
-      try {
-        const response = await axios.get<FeedStats>('/api/feeds/stats');
-        setStats(response.data);
-        setLastFetched(new Date());
-      } catch (err) {
-        console.error('Failed to fetch stats:', err);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
+  const fetchStats = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const response = await axios.get<FeedStats>('/api/feeds/stats', {
+        params: { window: feedWindowHours },
+      });
+      setStats(response.data);
+      setLastFetched(new Date());
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [feedWindowHours]);
 
-    const fetchTopItems = async () => {
-      setLoadingItems(true);
-      try {
-        const response = await axios.get<{ items: FeedItem[] }>('/api/feeds', {
-          params: {
-            window: feedWindowHours,
-            urgency: 'critical',
-            limit: 10,
-            page: 1,
-          },
+  const fetchTopItems = useCallback(async () => {
+    setLoadingItems(true);
+    try {
+      const response = await axios.get<{ items: FeedItem[] }>('/api/feeds', {
+        params: { window: feedWindowHours, urgency: 'critical', limit: 10, page: 1 },
+      });
+
+      let items = response.data.items;
+
+      if (items.length < 5) {
+        const highResponse = await axios.get<{ items: FeedItem[] }>('/api/feeds', {
+          params: { window: feedWindowHours, urgency: 'high', limit: 10 - items.length, page: 1 },
         });
-
-        let items = response.data.items;
-
-        // If fewer than 5 critical, supplement with high
-        if (items.length < 5) {
-          const highResponse = await axios.get<{ items: FeedItem[] }>('/api/feeds', {
-            params: {
-              window: feedWindowHours,
-              urgency: 'high',
-              limit: 10 - items.length,
-              page: 1,
-            },
-          });
-          items = [...items, ...highResponse.data.items];
-        }
-
-        setTopItems(items.slice(0, 10));
-      } catch (err) {
-        console.error('Failed to fetch top items:', err);
-      } finally {
-        setLoadingItems(false);
+        items = [...items, ...highResponse.data.items];
       }
-    };
 
+      setTopItems(items.slice(0, 10));
+    } catch (err) {
+      console.error('Failed to fetch top items:', err);
+    } finally {
+      setLoadingItems(false);
+    }
+  }, [feedWindowHours]);
+
+  useEffect(() => {
     void fetchStats();
     void fetchTopItems();
-  }, [feedWindowHours]);
+  }, [fetchStats, fetchTopItems]);
+
+  useEffect(() => {
+    const handler = () => {
+      void fetchStats();
+      void fetchTopItems();
+    };
+    window.addEventListener('feedwatch-refreshed', handler);
+    return () => window.removeEventListener('feedwatch-refreshed', handler);
+  }, [fetchStats, fetchTopItems]);
 
   const urgencyKeys = ['critical', 'high', 'medium', 'low'] as const;
 

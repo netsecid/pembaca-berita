@@ -15,11 +15,12 @@ router.post('/', async (req: Request, res: Response) => {
 
     let analyzed = 0;
 
-    const { apiKey, provider, model, baseUrl } = req.body as {
+    const { apiKey, provider, model, baseUrl, customPrompt } = req.body as {
       apiKey?: string;
       provider?: string;
       model?: string;
       baseUrl?: string;
+      customPrompt?: string;
     };
 
     if (apiKey && provider && model) {
@@ -32,7 +33,7 @@ router.post('/', async (req: Request, res: Response) => {
 
       const unanalyzedItems = getUnanalyzedItems(50);
       if (unanalyzedItems.length > 0) {
-        analyzed = await analyzeNewItems(unanalyzedItems, aiSettings);
+        analyzed = await analyzeNewItems(unanalyzedItems, aiSettings, 500, customPrompt);
       }
     }
 

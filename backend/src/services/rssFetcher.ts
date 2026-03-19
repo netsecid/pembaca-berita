@@ -1,5 +1,6 @@
 import Parser from 'rss-parser';
 import crypto from 'crypto';
+import axios from 'axios';
 import { Source, upsertFeedItem, updateSourceLastFetched, getAllSources } from './feedStore';
 
 const parser = new Parser({
@@ -33,6 +34,54 @@ function hashLink(link: string): string {
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, ' ').trim();
+}
+
+async function extractFullContent(url: string): Promise<string | null> {
+  try {
+    const response = await axios.get<string>(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Mata-CTI/1.0 RSS Intelligence)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      maxContentLength: 5 * 1024 * 1024,
+      responseType: 'text',
+    });
+    const html = response.data;
+
+    // Strip scripts, styles, navigation
+    let cleaned = html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+      .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[\s\S]*?<\/header>/gi, '')
+      .replace(/<aside[\s\S]*?<\/aside>/gi, '');
+
+    // Prefer <article> or <main>, fall back to <body>
+    const articleMatch = cleaned.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
+    const mainMatch = cleaned.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+    const bodyMatch = cleaned.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const content = articleMatch?.[1] ?? mainMatch?.[1] ?? bodyMatch?.[1] ?? cleaned;
+
+    const text = content
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return text.length > 100 ? text.substring(0, 12000) : null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`Full content extraction failed for ${url}: ${msg}`);
+    return null;
+  }
 }
 
 export async function fetchFeed(source: Source): Promise<RawFeedItem[]> {
@@ -72,6 +121,18 @@ export async function fetchFeed(source: Source): Promise<RawFeedItem[]> {
         published_at,
         fetched_at: fetchedAt,
       });
+    }
+
+    // Optionally enrich with full article content
+    if (source.fetch_full_content) {
+      for (const item of items) {
+        try {
+          const fullText = await extractFullContent(item.link);
+          if (fullText) item.content = fullText;
+        } catch {
+          // non-fatal
+        }
+      }
     }
 
     return items;
